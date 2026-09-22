@@ -1,0 +1,1 @@
+ First, use objdump to get the static address. Second, run it with gdb to find out the address of the stack. Then, fill the buffer with such a string that overwrites the return address to the buffer (so that you can put exploit code, alternatively, you could invoke other code in the program).
