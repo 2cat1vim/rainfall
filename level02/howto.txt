@@ -1,4 +1,0 @@
-The exploit is a OFF BY ONE STACK OVERFLOW, and we need to use a pivot
-BUFFERSIZE = 64
-
-https://www.youtube.com/watch?v=jU7yB-elFV8
