@@ -158,7 +158,7 @@ slot, or a `GOT`/`.data` pointer dump) to leak a libc address too.
 ## Running it
 
 ```sh
-python3 expl.py
+python3 exploit.py
 ```
 
 The script: connects to `./3jane`, triggers the format-string leak to
